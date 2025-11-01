@@ -16,7 +16,7 @@ import java.util.List;
  * The MySQLBuilder is held internally and accessed via getBuilder().
  */
 @Getter
-public class UserRequest extends BaseRequest<User> {
+public class UserQueryRequest extends BaseRequest<User> {
 
     private static final Table USER_TABLE = new Table("users", "u", User.class);
 
@@ -32,7 +32,7 @@ public class UserRequest extends BaseRequest<User> {
     /**
      * Constructor - Initialize with session
      */
-    public UserRequest(JdbcSession session) {
+    public UserQueryRequest(JdbcSession session) {
         super(USER_TABLE, session, new UserRowMapper());
     }
 
@@ -40,7 +40,7 @@ public class UserRequest extends BaseRequest<User> {
      * Apply filters to the builder
      * Call this before executing queries
      */
-    public UserRequest applyFilters() {
+    public UserQueryRequest applyQuery() {
         var builder = getBuilder();
 
         if (ids != null && !ids.isEmpty()) {
@@ -79,37 +79,37 @@ public class UserRequest extends BaseRequest<User> {
 
     // ============ FLUENT SETTERS ============
 
-    public UserRequest username(String username) {
+    public UserQueryRequest username(String username) {
         this.username = username;
         return this;
     }
 
-    public UserRequest email(String email) {
+    public UserQueryRequest email(String email) {
         this.email = email;
         return this;
     }
 
-    public UserRequest ids(List<Long> ids) {
+    public UserQueryRequest ids(List<Long> ids) {
         this.ids = ids;
         return this;
     }
 
-    public UserRequest usernames(List<String> usernames) {
+    public UserQueryRequest usernames(List<String> usernames) {
         this.usernames = usernames;
         return this;
     }
 
-    public UserRequest active(Boolean active) {
+    public UserQueryRequest active(Boolean active) {
         this.active = active;
         return this;
     }
 
-    public UserRequest role(String role) {
+    public UserQueryRequest role(String role) {
         this.role = role;
         return this;
     }
 
-    public UserRequest searchKeyword(String searchKeyword) {
+    public UserQueryRequest searchKeyword(String searchKeyword) {
         this.searchKeyword = searchKeyword;
         return this;
     }

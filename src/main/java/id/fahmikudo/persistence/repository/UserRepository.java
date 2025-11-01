@@ -3,7 +3,7 @@ package id.fahmikudo.persistence.repository;
 import id.fahmikudo.persistence.common.querybuilder.OrderColumn;
 import id.fahmikudo.persistence.common.table.Table;
 import id.fahmikudo.persistence.entity.User;
-import id.fahmikudo.persistence.request.UserRequest;
+import id.fahmikudo.persistence.request.UserQueryRequest;
 import id.fahmikudo.persistence.session.JdbcSession;
 import lombok.Getter;
 import org.springframework.stereotype.Repository;
@@ -31,14 +31,14 @@ public class UserRepository implements UserRepositoryInterface {
     }
 
     @Override
-    public Optional<List<User>> find(UserRequest request) throws Exception {
-        request.applyFilters(); // Apply filters to builder
+    public Optional<List<User>> find(UserQueryRequest request) throws Exception {
+        request.applyQuery(); // Apply filters to builder
         return Optional.ofNullable(request.getBuilder().select());
     }
 
     @Override
-    public int count(UserRequest request) throws Exception {
-        request.applyFilters(); // Apply filters to builder
+    public int count(UserQueryRequest request) throws Exception {
+        request.applyQuery(); // Apply filters to builder
         return request.getBuilder().count();
     }
 
@@ -46,9 +46,9 @@ public class UserRepository implements UserRepositoryInterface {
 
     @Override
     public Optional<User> findByUsername(String username) {
-        var request = new UserRequest(session)
+        var request = new UserQueryRequest(session)
                 .username(username)
-                .applyFilters();
+                .applyQuery();
 
         List<User> results = request.getBuilder().select();
         return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
@@ -56,9 +56,9 @@ public class UserRepository implements UserRepositoryInterface {
 
     @Override
     public Optional<User> findByEmail(String email) {
-        var request = new UserRequest(session)
+        var request = new UserQueryRequest(session)
                 .email(email)
-                .applyFilters();
+                .applyQuery();
 
         List<User> results = request.getBuilder().select();
         return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
@@ -66,9 +66,9 @@ public class UserRepository implements UserRepositoryInterface {
 
     @Override
     public List<User> findActiveUsers() {
-        var request = new UserRequest(session)
+        var request = new UserQueryRequest(session)
                 .active(true)
-                .applyFilters();
+                .applyQuery();
         request.setOrderColumns(List.of(
                 new OrderColumn("created_at", OrderColumn.Order.DESC)
         ));
@@ -78,10 +78,10 @@ public class UserRepository implements UserRepositoryInterface {
 
     @Override
     public List<User> findByRole(String role) {
-        var request = new UserRequest(session)
+        var request = new UserQueryRequest(session)
                 .role(role)
                 .active(true)
-                .applyFilters();
+                .applyQuery();
         request.setOrderColumns(List.of(
                 new OrderColumn("username", OrderColumn.Order.ASC)
         ));

@@ -1,7 +1,7 @@
 package id.fahmikudo.persistence.repository;
 
 import id.fahmikudo.persistence.entity.User;
-import id.fahmikudo.persistence.request.UserRequest;
+import id.fahmikudo.persistence.request.UserQueryRequest;
 import org.junit.jupiter.api.*;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.testcontainers.containers.MySQLContainer;
@@ -128,7 +128,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find with no filters - returns all users")
     void testFindWithNoFilters() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession());
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession());
 
         // When
         Optional<List<User>> result = userRepository.find(request);
@@ -144,7 +144,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find with username filter")
     void testFindWithUsernameFilter() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .username("admin");
 
         // When
@@ -162,7 +162,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find with multiple usernames")
     void testFindWithMultipleUsernames() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .usernames(Arrays.asList("admin", "john_doe", "jane_smith"));
 
         // When
@@ -179,7 +179,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find with active filter")
     void testFindWithActiveFilter() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .active(true);
 
         // When
@@ -197,7 +197,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find with role filter")
     void testFindWithRoleFilter() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .role("ADMIN");
 
         // When
@@ -215,7 +215,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test count with no filters")
     void testCountWithNoFilters() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession());
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession());
 
         // When
         int count = userRepository.count(request);
@@ -229,7 +229,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test count with filters")
     void testCountWithFilters() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .role("USER");
 
         // When
@@ -246,7 +246,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test pagination - page 1")
     void testPaginationPage1() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession());
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession());
         request.setOffset(0);
         request.setLimit(2);
 
@@ -264,7 +264,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test pagination - page 2")
     void testPaginationPage2() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession());
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession());
         request.setOffset(2);
         request.setLimit(2);
 
@@ -282,7 +282,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test pagination with count")
     void testPaginationWithCount() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .active(true);
         request.setOffset(0);
         request.setLimit(3);
@@ -398,7 +398,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find with empty result")
     void testFindWithEmptyResult() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .username("nonexistent_user_xyz");
 
         // When
@@ -414,7 +414,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test count returns zero for non-existent filter")
     void testCountReturnsZero() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .role("NONEXISTENT_ROLE");
 
         // When
@@ -429,7 +429,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test complex filters - role and active")
     void testComplexFilters() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .role("USER")
                 .active(true);
 
@@ -448,7 +448,7 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test search keyword")
     void testSearchKeyword() throws Exception {
         // Given
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .searchKeyword("john");
 
         // When
@@ -466,13 +466,13 @@ public class UserRepositoryIntegrationTest {
     @DisplayName("Test find by IDs")
     void testFindByIds() throws Exception {
         // Given - First get some user IDs
-        UserRequest allUsersRequest = new UserRequest(userRepository.getSession())
+        UserQueryRequest allUsersRequest = new UserQueryRequest(userRepository.getSession())
                 .usernames(Arrays.asList("admin", "john_doe"));
         List<User> allUsers = userRepository.find(allUsersRequest).get();
         List<Long> ids = allUsers.stream().map(User::getId).toList();
 
         // When
-        UserRequest request = new UserRequest(userRepository.getSession())
+        UserQueryRequest request = new UserQueryRequest(userRepository.getSession())
                 .ids(ids);
         Optional<List<User>> result = userRepository.find(request);
 

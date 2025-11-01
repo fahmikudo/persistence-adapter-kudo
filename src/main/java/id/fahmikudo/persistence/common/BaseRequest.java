@@ -2,7 +2,7 @@ package id.fahmikudo.persistence.common;
 
 import id.fahmikudo.persistence.common.querybuilder.OrderColumn;
 import id.fahmikudo.persistence.common.table.Table;
-import id.fahmikudo.persistence.config.MySQLBuilder;
+import id.fahmikudo.persistence.config.MySQLQueryBuilder;
 import id.fahmikudo.persistence.session.JdbcSession;
 import lombok.Getter;
 import org.springframework.jdbc.core.RowMapper;
@@ -24,7 +24,7 @@ public abstract class BaseRequest<T> {
      * -- GETTER --
      *  Get the query builder
      */
-    private final MySQLBuilder<T> builder;
+    private final MySQLQueryBuilder<T> builder;
     private Integer offset;
     private Integer limit;
     private Collection<String> selectColumns;
@@ -35,7 +35,7 @@ public abstract class BaseRequest<T> {
      * Constructor - Initialize with table and session
      */
     protected BaseRequest(Table table, JdbcSession session, RowMapper<T> rowMapper) {
-        this.builder = new MySQLBuilder<>(table, session, rowMapper);
+        this.builder = new MySQLQueryBuilder<>(table, session, rowMapper);
     }
 
     // ============ FLUENT SETTERS ============

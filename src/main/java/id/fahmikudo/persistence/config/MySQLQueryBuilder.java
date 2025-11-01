@@ -1,6 +1,7 @@
 package id.fahmikudo.persistence.config;
 
 import id.fahmikudo.persistence.common.table.Table;
+import id.fahmikudo.persistence.common.querybuilder.JoinClause;
 import id.fahmikudo.persistence.common.querybuilder.OrderColumn;
 import id.fahmikudo.persistence.session.JdbcSession;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,7 +14,7 @@ import java.util.*;
  * MySQLQueryBuilder - Fluent API for building and executing SQL queries with Spring JDBC
  * Replaces Hibernate's SQLQuery with Spring JDBC NamedParameterJdbcTemplate
  */
-public class MySQLBuilder<T> {
+public class MySQLQueryBuilder<T> {
 
     private static final String PREFIX_OBJECT_PARAMETER = "objectParameter_";
     private static final String PREFIX_COLLECTION_PARAMETER = "collectionParameter_";
@@ -31,13 +32,15 @@ public class MySQLBuilder<T> {
     private final Map<String, Object> objectParameterById = new HashMap<>();
     private final Map<String, Collection<?>> collectionParameterById = new HashMap<>();
 
+    private final List<JoinClause> joinClauses = new ArrayList<>();
+
     private final Set<String> groupByColumns = new LinkedHashSet<>();
     private final Set<String> orderByColumns = new LinkedHashSet<>();
 
     private Integer offset;
     private Integer limit;
 
-    public MySQLBuilder(Table table, JdbcSession session, RowMapper<T> rowMapper) {
+    public MySQLQueryBuilder(Table table, JdbcSession session, RowMapper<T> rowMapper) {
         this.table = table;
         this.session = session;
         this.rowMapper = rowMapper;
@@ -86,6 +89,10 @@ public class MySQLBuilder<T> {
 
     private String getColumnOf(String column) {
         return table.alias() + "." + column;
+    }
+
+    private String getColumnOf(String tableAlias, String column) {
+        return tableAlias + "." + column;
     }
 
     // ============ CLAUSE BUILDERS ============
@@ -256,6 +263,94 @@ public class MySQLBuilder<T> {
         }
     }
 
+    // ============ JOIN OPERATIONS ============
+
+    /**
+     * Add an INNER JOIN clause
+     * @param joinTable The table to join
+     * @param leftColumn Column from the main table
+     * @param rightColumn Column from the join table
+     */
+    public void innerJoin(Table joinTable, String leftColumn, String rightColumn) {
+        join(JoinClause.JoinType.INNER, joinTable, leftColumn, rightColumn);
+    }
+
+    /**
+     * Add a LEFT JOIN clause
+     * @param joinTable The table to join
+     * @param leftColumn Column from the main table
+     * @param rightColumn Column from the join table
+     */
+    public void leftJoin(Table joinTable, String leftColumn, String rightColumn) {
+        join(JoinClause.JoinType.LEFT, joinTable, leftColumn, rightColumn);
+    }
+
+    /**
+     * Add a RIGHT JOIN clause
+     * @param joinTable The table to join
+     * @param leftColumn Column from the main table
+     * @param rightColumn Column from the join table
+     */
+    public void rightJoin(Table joinTable, String leftColumn, String rightColumn) {
+        join(JoinClause.JoinType.RIGHT, joinTable, leftColumn, rightColumn);
+    }
+
+    /**
+     * Add a FULL OUTER JOIN clause
+     * @param joinTable The table to join
+     * @param leftColumn Column from the main table
+     * @param rightColumn Column from the join table
+     */
+    public void fullJoin(Table joinTable, String leftColumn, String rightColumn) {
+        join(JoinClause.JoinType.FULL, joinTable, leftColumn, rightColumn);
+    }
+
+    /**
+     * Add a custom JOIN clause with custom ON condition
+     * @param joinType Type of JOIN (INNER, LEFT, RIGHT, FULL)
+     * @param joinTable The table to join
+     * @param onCondition Custom ON condition (e.g., "t1.id = t2.user_id AND t2.status = 'ACTIVE'")
+     */
+    public void join(JoinClause.JoinType joinType, Table joinTable, String onCondition) {
+        if (joinTable != null && isNotEmpty(onCondition)) {
+            joinClauses.add(new JoinClause(joinType, joinTable, onCondition));
+        }
+    }
+
+    /**
+     * Add a JOIN clause with simple column equality condition
+     */
+    private void join(JoinClause.JoinType joinType, Table joinTable, String leftColumn, String rightColumn) {
+        if (joinTable != null && isNotEmpty(leftColumn) && isNotEmpty(rightColumn)) {
+            String onCondition = getColumnOf(table.alias(), leftColumn) + " = " +
+                                 getColumnOf(joinTable.alias(), rightColumn);
+            joinClauses.add(new JoinClause(joinType, joinTable, onCondition));
+        }
+    }
+
+    /**
+     * Select column from joined table
+     * @param tableAlias Alias of the table (main or joined)
+     * @param column Column name
+     */
+    public void selectColumnFrom(String tableAlias, String column) {
+        if (isNotEmpty(tableAlias) && isNotEmpty(column)) {
+            this.selectedColumns.add(tableAlias + "." + column);
+        }
+    }
+
+    /**
+     * Select column from joined table with custom alias
+     * @param tableAlias Alias of the table (main or joined)
+     * @param column Column name
+     * @param columnAlias Custom alias for the column in result set
+     */
+    public void selectColumnFrom(String tableAlias, String column, String columnAlias) {
+        if (isNotEmpty(tableAlias) && isNotEmpty(column) && isNotEmpty(columnAlias)) {
+            this.selectedColumns.add(tableAlias + "." + column + " AS " + columnAlias);
+        }
+    }
+
     // ============ SELECT COLUMNS ============
 
     public void selectColumn(String column) {
@@ -286,6 +381,11 @@ public class MySQLBuilder<T> {
         joiner.add("FROM");
         joiner.add(table.name());
         joiner.add(table.alias());
+
+        String joinString = getJoinString();
+        if (isNotEmpty(joinString)) {
+            joiner.add(joinString);
+        }
 
         String clausesString = getClausesString();
         if (isNotEmpty(clausesString)) {
@@ -388,7 +488,22 @@ public class MySQLBuilder<T> {
         return "";
     }
 
-    // ============ PAGINATION SETTERS ============
+    private String getJoinString() {
+        if (!CollectionUtils.isEmpty(joinClauses)) {
+            StringJoiner joiner = new StringJoiner(" ");
+            joinClauses.forEach(joinClause -> {
+                joiner.add(joinClause.joinType().code);
+                joiner.add(joinClause.table().name());
+                joiner.add(joinClause.table().alias());
+                joiner.add("ON");
+                joiner.add(joinClause.onCondition());
+            });
+            return joiner.toString();
+        }
+        return "";
+    }
+
+    // ============ UTILITY METHODS ============
 
     public void setOffset(Integer offset) {
         this.offset = offset;
